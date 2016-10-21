@@ -4,6 +4,7 @@
 # This makefile works with GCC under Linux.
 #
 
+.PHONY: all
 all: ref_xoroshiro ref_mt19937
 
 ref_xoroshiro: ref_xoroshiro.c
