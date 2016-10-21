@@ -14,13 +14,24 @@
 --  to initialize the generator at reset. The generator also supports
 --  re-seeding at run time.
 --
---  After reset, at least one enabled clock cycle is needed before
---  a random number appears on the output.
+--  After reset, at least one clock cycle is needed before valid
+--  random data appears on the output.
 --
 --  NOTE: This is not a cryptographic random number generator.
 --
 --  NOTE: The least significant output bit is less random than
 --        all other output bits.
+--
+
+--
+--  Copyright (C) 2016 Joris van Rantwijk
+--
+--  This code is free software; you can redistribute it and/or
+--  modify it under the terms of the GNU Lesser General Public
+--  License as published by the Free Software Foundation; either
+--  version 2.1 of the License, or (at your option) any later version.
+--
+--  See <https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html>
 --
 
 library ieee;
