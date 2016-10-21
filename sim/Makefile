@@ -6,11 +6,15 @@ GHDL = ghdl
 GHDLFLAGS =
 
 .PHONY: all
-all: tb_xoroshiro128plus
+all: tb_xoroshiro128plus tb_mt19937
 
 tb_xoroshiro128plus: tb_xoroshiro128plus.o rng_xoroshiro128plus.o
 tb_xoroshiro128plus.o: tb_xoroshiro128plus.vhdl rng_xoroshiro128plus.o
 rng_xoroshiro128plus.o: ../rtl/rng_xoroshiro128plus.vhdl
+
+tb_mt19937:	tb_mt19937.o rng_mt19937.o
+tb_mt19937.o:	tb_mt19937.vhdl rng_mt19937.o
+rng_mt19937.o:	../rtl/rng_mt19937.vhdl
 
 tb_%: tb_%.o
 	$(GHDL) $(GHDLFLAGS) -e $@
