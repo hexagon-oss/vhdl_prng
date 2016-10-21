@@ -1,7 +1,13 @@
 /*
  * Reference implementation of Mersenne Twister MT19937 in C++11.
  *
- * Test bench by Joris van Rantwijk.
+ * Written in 2016 by Joris van Rantwijk <joris@jorisvr.nl>
+ *
+ * To the extent possible under law, the author(s) have dedicated all copyright
+ * and related and neighboring rights to this software to the public domain
+ * worldwide. This software is distributed without any warranty.
+ *
+ * See <http://creativecommons.org/publicdomain/zero/1.0/>
  */
 
 #include <cstdlib>

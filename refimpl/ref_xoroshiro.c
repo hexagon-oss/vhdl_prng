@@ -1,12 +1,14 @@
 /*
  * Reference implementation of "xoroshiro128+" in C.
  *
- * Algorithm by David Blackman and Sebastiano Vigna.
- * Test bench by Joris van Rantwijk.
+ * Algorithm code by David Blackman and Sebastiano Vigna <vigna@acm.org>
+ * Main program wrapper by Joris van Rantwijk <joris@jorisvr.nl>
  *
  * To the extent possible under law, the author has dedicated all copyright
  * and related and neighboring rights to this software to the public domain
  * worldwide. This software is distributed without any warranty.
+ *
+ * See <http://creativecommons.org/publicdomain/zero/1.0/>
  */
 
 #include <stdlib.h>
@@ -15,7 +17,7 @@
 
 
 /*  ========== BEGIN of reference implementation of xoroshiro128+ ==========
- *  See also http://xoroshiro.di.unimi.it/
+ *  Source: http://xoroshiro.di.unimi.it/
  */
 
 /*  Written in 2016 by David Blackman and Sebastiano Vigna (vigna@acm.org)
