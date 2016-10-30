@@ -113,6 +113,8 @@ architecture rng_mt19937_arch of rng_mt19937 is
     signal reg_reseed_cnt:  std_logic_vector(9 downto 0);
     signal reg_output_buf:  std_logic_vector(31 downto 0);
     signal reg_seed_a:      std_logic_vector(31 downto 0);
+    signal reg_seed_a2:     std_logic_vector(31 downto 0);
+    signal reg_seed_a3:     std_logic_vector(31 downto 0);
     signal reg_seed_b:      std_logic_vector(31 downto 0);
 
     -- Output register.
@@ -125,24 +127,8 @@ architecture rng_mt19937_arch of rng_mt19937 is
     is
         variable t: unsigned(2*x'length-1 downto 0);
     begin
-        if force_const_mul then
-            -- Force multiplication via repeated shifts and adds.
-            return x
-                   + shift_left(x, 2)
-                   + shift_left(x, 5)
-                   + shift_left(x, 6)
-                   + shift_left(x, 8)
-                   + shift_left(x, 11)
-                   - shift_left(x, 15)
-                   + shift_left(x, 19)
-                   - shift_left(x, 26)
-                   - shift_left(x, 28)
-                   + shift_left(x, 31);
-        else
-            -- Let synthesizer choose a multiplier implementation.
-            t := x * const_f;
-            return t(x'length-1 downto 0);
-        end if;
+        t := x * const_f;
+        return t(x'length-1 downto 0);
     end function;
 
 begin
@@ -210,10 +196,33 @@ begin
                 y := reg_a_wdata;
                 y(1 downto 0) := y(1 downto 0) xor y(31 downto 30);
                 reg_seed_a <= y;
+                if force_const_mul then
+                    -- Multiply by 37.
+                    reg_seed_a2 <= std_logic_vector(
+                          unsigned(y)
+                        + shift_left(unsigned(y), 2)
+                        + shift_left(unsigned(y), 5));
+                    -- Multiply by (2**19 - 2**15).
+                    reg_seed_a3 <= std_logic_vector(
+                          shift_left(unsigned(y), 19)
+                        - shift_left(unsigned(y), 15));
+                end if;
             end if;
 
             -- Reseed state 2: Multiply by constant.
-            reg_seed_b  <= std_logic_vector(mulconst(unsigned(reg_seed_a)));
+            if force_const_mul then
+                -- Finalize multiplication by 1812433253 =
+                -- (37 + 2**6*37 - 2**15 + 2**19 - 2**26*37)
+                reg_seed_b  <= std_logic_vector(
+                      unsigned(reg_seed_a2)
+                    + shift_left(unsigned(reg_seed_a2), 6)
+                    + unsigned(reg_seed_a3)
+                    - shift_left(unsigned(reg_seed_a2), 26));
+            else
+                -- Multiply by 1812433253.
+                -- Let synthesizer choose the multiplier implementation.
+                reg_seed_b  <= std_logic_vector(mulconst(unsigned(reg_seed_a)));
+            end if;
 
             -- Update internal RNG state.
             if reg_enable = '1' then
