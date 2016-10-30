@@ -107,15 +107,16 @@ architecture rng_mt19937_arch of rng_mt19937 is
     -- Internal registers.
     signal reg_enable:      std_logic;
     signal reg_reseeding:   std_logic;
-    signal reg_reseedstate: std_logic_vector(2 downto 0);
+    signal reg_reseedstate: std_logic_vector(3 downto 0);
     signal reg_validwait:   std_logic;
     signal reg_a_rdata_p:   std_logic_vector(31 downto 0);
     signal reg_reseed_cnt:  std_logic_vector(9 downto 0);
     signal reg_output_buf:  std_logic_vector(31 downto 0);
     signal reg_seed_a:      std_logic_vector(31 downto 0);
-    signal reg_seed_a2:     std_logic_vector(31 downto 0);
-    signal reg_seed_a3:     std_logic_vector(31 downto 0);
     signal reg_seed_b:      std_logic_vector(31 downto 0);
+    signal reg_seed_b2:     std_logic_vector(31 downto 0);
+    signal reg_seed_b3:     std_logic_vector(31 downto 0);
+    signal reg_seed_c:      std_logic_vector(31 downto 0);
 
     -- Output register.
     signal reg_valid:       std_logic;
@@ -169,9 +170,9 @@ begin
                 reg_a_rdata_p   <= reg_a_rdata;
             end if;
 
-            -- Update reseeding state (3 cycles per address step).
-            reg_reseedstate(2 downto 1) <= reg_reseedstate(1 downto 0);
-            reg_reseedstate(0) <= reg_reseedstate(2) and reg_reseeding;
+            -- Update reseeding state (4 cycles per address step).
+            reg_reseedstate(3 downto 1) <= reg_reseedstate(2 downto 0);
+            reg_reseedstate(0) <= reg_reseedstate(3) and reg_reseeding;
 
             -- Update reseeding counter.
             if reg_enable = '1' then
@@ -185,52 +186,62 @@ begin
             end if;
 
             -- Enable state machine on next cycle
-            --  a) during initialization, and
+            --  a) every 4th cycle during initialization, and
             --  b) on-demand for new output.
-            reg_enable  <= reg_reseedstate(1) or
+            reg_enable  <= reg_reseedstate(2) or
                            (not reg_reseeding and
                             (out_ready or not reg_valid));
 
             -- Reseed state 1: XOR and shift previous state element.
-            if reg_reseedstate(0) = '1' then
+            if reg_reseeding = '1' then
                 y := reg_a_wdata;
                 y(1 downto 0) := y(1 downto 0) xor y(31 downto 30);
                 reg_seed_a <= y;
-                if force_const_mul then
-                    -- Multiply by 37.
-                    reg_seed_a2 <= std_logic_vector(
-                          unsigned(y)
-                        + shift_left(unsigned(y), 2)
-                        + shift_left(unsigned(y), 5));
-                    -- Multiply by (2**19 - 2**15).
-                    reg_seed_a3 <= std_logic_vector(
-                          shift_left(unsigned(y), 19)
-                        - shift_left(unsigned(y), 15));
-                end if;
             end if;
 
             -- Reseed state 2: Multiply by constant.
             if force_const_mul then
-                -- Finalize multiplication by 1812433253 =
-                -- (37 + 2**6*37 - 2**15 + 2**19 - 2**26*37)
-                reg_seed_b  <= std_logic_vector(
-                      unsigned(reg_seed_a2)
-                    + shift_left(unsigned(reg_seed_a2), 6)
-                    + unsigned(reg_seed_a3)
-                    - shift_left(unsigned(reg_seed_a2), 26));
+                -- Multiply by 37.
+                reg_seed_b2 <= std_logic_vector(
+                      unsigned(reg_seed_a)
+                    + shift_left(unsigned(reg_seed_a), 2)
+                    + shift_left(unsigned(reg_seed_a), 5));
+                -- Multiply by (2**19 - 2**15).
+                reg_seed_b3 <= std_logic_vector(
+                      shift_left(unsigned(reg_seed_a), 19)
+                    - shift_left(unsigned(reg_seed_a), 15));
             else
                 -- Multiply by 1812433253.
-                -- Let synthesizer choose the multiplier implementation.
-                reg_seed_b  <= std_logic_vector(mulconst(unsigned(reg_seed_a)));
+                -- Let synthesizer choose a multiplier implementation.
+                reg_seed_b  <= std_logic_vector(
+                    mulconst(unsigned(reg_seed_a)));
             end if;
+
+            -- Reseed state 3: Finish multiplication by constant.
+            if force_const_mul then
+                -- Finalize multiplication by 1812433253 =
+                -- (37 + 2**6*37 - 2**15 + 2**19 - 2**26*37)
+                reg_seed_c  <= std_logic_vector(
+                      unsigned(reg_seed_b2)
+                    + shift_left(unsigned(reg_seed_b2), 6)
+                    + unsigned(reg_seed_b3)
+                    - shift_left(unsigned(reg_seed_b2), 26));
+            else
+                reg_seed_c  <= reg_seed_b;
+            end if;
+
+-- TODO : try this in synthesis;
+--        if not good enough, use state 4 to combine the last add step
+--        with the final add of reg_reseed_cnt, then put that directly
+--        into reg_a_wdata and into next seeding step.
 
             -- Update internal RNG state.
             if reg_enable = '1' then
 
                 if reg_reseeding = '1' then
 
-                    -- Reseed state 3: Write next state element.
-                    reg_a_wdata <= std_logic_vector(unsigned(reg_seed_b) +
+                    -- Reseed state 4: Write next state element.
+                    reg_a_wdata <= std_logic_vector(unsigned(reg_seed_c) +
                                                     unsigned(reg_reseed_cnt));
 
                 else
@@ -288,7 +299,7 @@ begin
             -- Start re-seeding.
             if reseed = '1' then
                 reg_reseeding   <= '1';
-                reg_reseedstate <= "001";
+                reg_reseedstate <= "0001";
                 reg_reseed_cnt  <= std_logic_vector(to_unsigned(1, 10));
                 reg_enable      <= '0';
                 reg_a_wdata     <= newseed;
@@ -300,7 +311,7 @@ begin
                 reg_a_addr      <= std_logic_vector(to_unsigned(0, 10));
                 reg_b_addr      <= std_logic_vector(to_unsigned(396, 10));
                 reg_reseeding   <= '1';
-                reg_reseedstate <= "001";
+                reg_reseedstate <= "0001";
                 reg_reseed_cnt  <= std_logic_vector(to_unsigned(1, 10));
                 reg_enable      <= '0';
                 reg_a_wdata     <= init_seed;
