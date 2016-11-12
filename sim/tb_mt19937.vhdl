@@ -80,7 +80,7 @@ begin
         s_rst       <= '0';
 
         -- Give generator time to complete initialization.
-        for i in 0 to 3*624 loop
+        for i in 0 to 4*624 loop
             assert s_valid = '0' report "Generator indicates VALID too early";
             wait until falling_edge(clk);
         end loop;
@@ -133,7 +133,7 @@ begin
         s_newseed   <= (others => '0');
 
         -- Give generator time to complete initialization.
-        for i in 0 to 3*624 loop
+        for i in 0 to 4*624 loop
             assert s_valid = '0' report "Generator indicates VALID too early";
             wait until falling_edge(clk);
             s_ready     <= '1';

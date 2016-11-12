@@ -34,10 +34,6 @@
 --  See <https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html>
 --
 
--- TODO : Multiplication in reseeding severely limits the maximum frequency
---        for this design.
---        Add pipelining and increase the number of clock cycles for reseeding.
-
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
@@ -115,8 +111,9 @@ architecture rng_mt19937_arch of rng_mt19937 is
     signal reg_seed_a:      std_logic_vector(31 downto 0);
     signal reg_seed_b:      std_logic_vector(31 downto 0);
     signal reg_seed_b2:     std_logic_vector(31 downto 0);
-    signal reg_seed_b3:     std_logic_vector(31 downto 0);
     signal reg_seed_c:      std_logic_vector(31 downto 0);
+    signal reg_seed_c2:     std_logic_vector(31 downto 0);
+    signal reg_seed_d:      std_logic_vector(31 downto 0);
 
     -- Output register.
     signal reg_valid:       std_logic;
@@ -186,28 +183,26 @@ begin
             end if;
 
             -- Enable state machine on next cycle
-            --  a) every 4th cycle during initialization, and
+            --  a) every 1st out of 4 cycles during reseeding, and
             --  b) on-demand for new output.
-            reg_enable  <= reg_reseedstate(2) or
+            reg_enable  <= reg_reseedstate(3) or
                            (not reg_reseeding and
                             (out_ready or not reg_valid));
 
             -- Reseed state 1: XOR and shift previous state element.
-            if reg_reseeding = '1' then
-                y := reg_a_wdata;
-                y(1 downto 0) := y(1 downto 0) xor y(31 downto 30);
-                reg_seed_a <= y;
-            end if;
+            y := reg_seed_d;
+            y(1 downto 0) := y(1 downto 0) xor y(31 downto 30);
+            reg_seed_a <= y;
 
             -- Reseed state 2: Multiply by constant.
             if force_const_mul then
                 -- Multiply by 37.
-                reg_seed_b2 <= std_logic_vector(
+                reg_seed_b  <= std_logic_vector(
                       unsigned(reg_seed_a)
                     + shift_left(unsigned(reg_seed_a), 2)
                     + shift_left(unsigned(reg_seed_a), 5));
                 -- Multiply by (2**19 - 2**15).
-                reg_seed_b3 <= std_logic_vector(
+                reg_seed_b2 <= std_logic_vector(
                       shift_left(unsigned(reg_seed_a), 19)
                     - shift_left(unsigned(reg_seed_a), 15));
             else
@@ -217,32 +212,40 @@ begin
                     mulconst(unsigned(reg_seed_a)));
             end if;
 
-            -- Reseed state 3: Finish multiplication by constant.
+            -- Reseed state 3: Continue multiplication by constant.
             if force_const_mul then
                 -- Finalize multiplication by 1812433253 =
                 -- (37 + 2**6*37 - 2**15 + 2**19 - 2**26*37)
                 reg_seed_c  <= std_logic_vector(
-                      unsigned(reg_seed_b2)
-                    + shift_left(unsigned(reg_seed_b2), 6)
-                    + unsigned(reg_seed_b3)
-                    - shift_left(unsigned(reg_seed_b2), 26));
+                      unsigned(reg_seed_b)
+                    + shift_left(unsigned(reg_seed_b), 6)
+                    + unsigned(reg_seed_b2));
+                reg_seed_c2 <= std_logic_vector(
+                      unsigned(reg_reseed_cnt)
+                    - shift_left(unsigned(reg_seed_b), 26));
             else
                 reg_seed_c  <= reg_seed_b;
             end if;
 
--- TODO : try this in synthesis;
---        if not good enough, use state 4 to combine the last add step
---        with the final add of reg_reseed_cnt, then put that directly
---        into reg_a_wdata and into next seeding step.
+            -- Reseed state 4: Prepare next element of initial state.
+            if reg_reseeding = '1' then
+                -- Add result of multiplication to reseed counter.
+                if force_const_mul then
+                    reg_seed_d  <= std_logic_vector(unsigned(reg_seed_c) +
+                                                    unsigned(reg_seed_c2));
+                else
+                    reg_seed_d  <= std_logic_vector(unsigned(reg_seed_c) +
+                                                    unsigned(reg_reseed_cnt));
+                end if;
+            end if;
 
             -- Update internal RNG state.
             if reg_enable = '1' then
 
                 if reg_reseeding = '1' then
 
-                    -- Reseed state 4: Write next state element.
-                    reg_a_wdata <= std_logic_vector(unsigned(reg_seed_c) +
-                                                    unsigned(reg_reseed_cnt));
+                    -- Reseed state 1: Write next state element.
+                    reg_a_wdata <= reg_seed_d;
 
                 else
 
@@ -300,9 +303,9 @@ begin
             if reseed = '1' then
                 reg_reseeding   <= '1';
                 reg_reseedstate <= "0001";
-                reg_reseed_cnt  <= std_logic_vector(to_unsigned(1, 10));
-                reg_enable      <= '0';
-                reg_a_wdata     <= newseed;
+                reg_reseed_cnt  <= std_logic_vector(to_unsigned(0, 10));
+                reg_enable      <= '1';
+                reg_seed_d      <= newseed;
                 reg_valid       <= '0';
             end if;
 
@@ -312,9 +315,9 @@ begin
                 reg_b_addr      <= std_logic_vector(to_unsigned(396, 10));
                 reg_reseeding   <= '1';
                 reg_reseedstate <= "0001";
-                reg_reseed_cnt  <= std_logic_vector(to_unsigned(1, 10));
-                reg_enable      <= '0';
-                reg_a_wdata     <= init_seed;
+                reg_reseed_cnt  <= std_logic_vector(to_unsigned(0, 10));
+                reg_enable      <= '1';
+                reg_seed_d      <= init_seed;
                 reg_valid       <= '0';
                 reg_output      <= (others => '0');
             end if;
