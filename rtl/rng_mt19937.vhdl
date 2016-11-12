@@ -15,8 +15,7 @@
 --  to initialize the generator at reset. The generator also supports
 --  re-seeded at run time.
 --
--- TODO : rewrite this thing about initialization
---  After reset, and after re-seeding, the generator needs 625 clock
+--  After reset, and after re-seeding, the generator needs 4 * 624 clock
 --  cycles to initialize its internal state. During this time, the generator
 --  is unable to provide correct output.
 --
@@ -185,7 +184,7 @@ begin
             -- Enable state machine on next cycle
             --  a) every 1st out of 4 cycles during reseeding, and
             --  b) on-demand for new output.
-            reg_enable  <= reg_reseedstate(3) or
+            reg_enable  <= (reg_reseeding and reg_reseedstate(3)) or
                            (not reg_reseeding and
                             (out_ready or not reg_valid));
 
@@ -196,17 +195,17 @@ begin
 
             -- Reseed state 2: Multiply by constant.
             if force_const_mul then
-                -- Multiply by 37.
+                -- Compute 37 * Mprev.
                 reg_seed_b  <= std_logic_vector(
                       unsigned(reg_seed_a)
                     + shift_left(unsigned(reg_seed_a), 2)
                     + shift_left(unsigned(reg_seed_a), 5));
-                -- Multiply by (2**19 - 2**15).
+                -- Compute (2**19 - 2**15) * Mprev.
                 reg_seed_b2 <= std_logic_vector(
                       shift_left(unsigned(reg_seed_a), 19)
                     - shift_left(unsigned(reg_seed_a), 15));
             else
-                -- Multiply by 1812433253.
+                -- Compute 1812433253 * Mprev.
                 -- Let synthesizer choose a multiplier implementation.
                 reg_seed_b  <= std_logic_vector(
                     mulconst(unsigned(reg_seed_a)));
@@ -214,12 +213,14 @@ begin
 
             -- Reseed state 3: Continue multiplication by constant.
             if force_const_mul then
+                -- Compute (37 + 2**6 * 37 + 2**19 - 2**15) * Mprev.
                 -- Finalize multiplication by 1812433253 =
                 -- (37 + 2**6*37 - 2**15 + 2**19 - 2**26*37)
                 reg_seed_c  <= std_logic_vector(
                       unsigned(reg_seed_b)
                     + shift_left(unsigned(reg_seed_b), 6)
                     + unsigned(reg_seed_b2));
+                -- Compute (2**32 - 2**26 * 37) * Mprev + reseed_cnt.
                 reg_seed_c2 <= std_logic_vector(
                       unsigned(reg_reseed_cnt)
                     - shift_left(unsigned(reg_seed_b), 26));
@@ -229,11 +230,14 @@ begin
 
             -- Reseed state 4: Prepare next element of initial state.
             if reg_reseeding = '1' then
-                -- Add result of multiplication to reseed counter.
                 if force_const_mul then
+                    -- Compute   (37 + 2**6 * 37 + 2**19 - 2**15) * Mprev
+                    --         + (2**32 - 2**26 * 37) * Mprev + reseed_cnt
+                    --         = 1812433253 * Mprev + reseed_cnt.
                     reg_seed_d  <= std_logic_vector(unsigned(reg_seed_c) +
                                                     unsigned(reg_seed_c2));
                 else
+                    -- Compute 1812433253 * Mprev + reseed_cnt.
                     reg_seed_d  <= std_logic_vector(unsigned(reg_seed_c) +
                                                     unsigned(reg_reseed_cnt));
                 end if;
