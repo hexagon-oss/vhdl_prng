@@ -2,16 +2,16 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-entity top is
+entity topmt is
     port (
         clk :   in  std_logic;
         rst :   in  std_logic;
         ready:  in  std_logic;
         valid:  out std_logic;
         data:   out std_logic_vector(31 downto 0) );
-end top;
+end topmt;
 
-architecture arch of top is
+architecture arch of topmt is
 begin
 
     inst_prng: entity work.rng_mt19937

@@ -2,16 +2,16 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-entity top is
+entity topxs is
     port (
         clk :   in  std_logic;
         rst :   in  std_logic;
         ready:  in  std_logic;
         valid:  out std_logic;
         data:   out std_logic_vector(63 downto 0) );
-end top;
+end topxs;
 
-architecture arch of top is
+architecture arch of topxs is
 begin
 
     inst_prng: entity work.rng_xoroshiro128plus
