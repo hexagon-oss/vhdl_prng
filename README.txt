@@ -57,8 +57,8 @@ See also M. Matsumoto, T. Nishimura, "Mersenne Twister: a 623-dimensionally
 equidistributed uniform pseudorandom number generator", ACM TOMACS, vol. 8,
 no. 1, 1998.
 
-This RNG is very popular in software applications because it is relatively
-fast while the output passes many statistical tests.
+This RNG is very popular in software applications. It is relatively fast,
+passes many statistical tests and has an enormous period.
 
 The VHDL implementation produces 32 new random bits on every (enabled)
 clock cycle. It uses a RAM block, 32 bits wide, 1024 elements deep,
