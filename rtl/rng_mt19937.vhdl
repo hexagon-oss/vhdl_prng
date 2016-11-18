@@ -68,8 +68,8 @@ entity rng_mt19937 is
         out_ready:  in  std_logic;
 
         -- High when valid random data is available on the output.
-        -- This signal is low during the first clock cycle after reset and
-        -- after re-seeding, and high in all other cases.
+        -- This signal is low during the first 4*624 clock cycles after
+        -- reset and after re-seeding, and high in all other cases.
         out_valid:  out std_logic;
 
         -- Random output data (valid when out_valid = '1').
@@ -87,36 +87,38 @@ architecture rng_mt19937_arch of rng_mt19937 is
     constant const_b: std_logic_vector(31 downto 0) := x"9d2c5680";
     constant const_c: std_logic_vector(31 downto 0) := x"efc60000";
     constant const_f: natural                       := 1812433253;
+    constant addr_offset: natural                   := 396;
 
     -- Block RAM for generator state.
     type mem_t is array(0 to 620) of std_logic_vector(31 downto 0);
     signal mem: mem_t;
 
     -- RAM access registers.
-    signal reg_a_addr:      std_logic_vector(9 downto 0);
-    signal reg_b_addr:      std_logic_vector(9 downto 0);
-    signal reg_a_wdata:     std_logic_vector(31 downto 0);
-    signal reg_a_rdata:     std_logic_vector(31 downto 0);
-    signal reg_b_rdata:     std_logic_vector(31 downto 0);
+    signal reg_a_addr:  std_logic_vector(9 downto 0) := (others => '0');
+    signal reg_b_addr:  std_logic_vector(9 downto 0) := std_logic_vector(
+        to_unsigned(addr_offset, 10));
+    signal reg_a_wdata: std_logic_vector(31 downto 0);
+    signal reg_a_rdata: std_logic_vector(31 downto 0);
+    signal reg_b_rdata: std_logic_vector(31 downto 0);
 
     -- Internal registers.
-    signal reg_enable:      std_logic;
-    signal reg_reseeding:   std_logic;
-    signal reg_reseedstate: std_logic_vector(3 downto 0);
+    signal reg_enable:      std_logic                       := '1';
+    signal reg_reseeding:   std_logic                       := '1';
+    signal reg_reseedstate: std_logic_vector(3 downto 0)    := "0001";
     signal reg_validwait:   std_logic;
     signal reg_a_rdata_p:   std_logic_vector(31 downto 0);
-    signal reg_reseed_cnt:  std_logic_vector(9 downto 0);
+    signal reg_reseed_cnt:  std_logic_vector(9 downto 0)    := (others => '0');
     signal reg_output_buf:  std_logic_vector(31 downto 0);
     signal reg_seed_a:      std_logic_vector(31 downto 0);
     signal reg_seed_b:      std_logic_vector(31 downto 0);
     signal reg_seed_b2:     std_logic_vector(31 downto 0);
     signal reg_seed_c:      std_logic_vector(31 downto 0);
     signal reg_seed_c2:     std_logic_vector(31 downto 0);
-    signal reg_seed_d:      std_logic_vector(31 downto 0);
+    signal reg_seed_d:      std_logic_vector(31 downto 0)   := init_seed;
 
     -- Output register.
-    signal reg_valid:       std_logic;
-    signal reg_output:      std_logic_vector(31 downto 0) := (others => '0');
+    signal reg_valid:       std_logic                       := '0';
+    signal reg_output:      std_logic_vector(31 downto 0)   := (others => '0');
 
     -- Multiply unsigned number with constant and discard overflowing bits.
     function mulconst(x: unsigned)
@@ -316,7 +318,8 @@ begin
             -- Synchronous reset.
             if rst = '1' then
                 reg_a_addr      <= std_logic_vector(to_unsigned(0, 10));
-                reg_b_addr      <= std_logic_vector(to_unsigned(396, 10));
+                reg_b_addr      <= std_logic_vector(
+                                     to_unsigned(addr_offset, 10));
                 reg_reseeding   <= '1';
                 reg_reseedstate <= "0001";
                 reg_reseed_cnt  <= std_logic_vector(to_unsigned(0, 10));

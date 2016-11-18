@@ -83,7 +83,7 @@ architecture xoroshiro128plus_arch of rng_xoroshiro128plus is
     signal reg_state_s1:    std_logic_vector(63 downto 0) := init_seed(127 downto 64);
 
     -- Output register.
-    signal reg_valid:       std_logic;
+    signal reg_valid:       std_logic := '0';
     signal reg_output:      std_logic_vector(63 downto 0) := (others => '0');
 
     -- Shift left.
