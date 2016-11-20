@@ -8,15 +8,18 @@
 --
 --  The algorithm "Trivium" is by Christophe De Canniere and Bart Preneel.
 --  See also:
---  C. De Canniere, B. Preneel, "Trivium Specifications", (TODO URL).
+--  C. De Canniere, B. Preneel, "Trivium Specifications",
+--    http://www.ecrypt.eu.org/stream/p3ciphers/trivium/trivium_p3.pdf
+--  The eSTREAM portfolio page for Trivium:
+--    http://www.ecrypt.eu.org/stream/e2-trivium.html
 --
 --  The generator requires an 80-bit key and an 80-bit initialization
 --  vector. Defaults for these values must be supplied at compile time
 --  and will be used to initialize the generator at reset. The generator
 --  also supports re-keying at run time.
 --
---  After reset and after re-seeding, at least 4*288 clock cycles are needed
---  before valid random data appears on the output.
+--  After reset and after re-seeding, at least (1152/num_bits) clock cycles
+--  are needed before valid random data appears on the output.
 --
 --  NOTE: This generator is designed to produce up to 2**64 bits
 --        of secure random data. If more than 2**64 bits are generated
@@ -44,6 +47,7 @@ entity rng_trivium is
 
     generic (
         -- Number of output bits per clock cycle.
+        -- Must be a power of two: either 1, 2, 4, 8, 16, 32 or 64.
         num_bits:   integer range 1 to 64;
 
         -- Default key.
@@ -74,8 +78,8 @@ entity rng_trivium is
         out_ready:  in  std_logic;
 
         -- High when valid random data is available on the output.
-        -- This signal is low during the first 4*288 clock cycle after reset
-        -- and after re-seeding, and high in all other cases.
+        -- This signal is low during the first (1152/num_bits) clock cycles
+        -- after reset and after re-seeding, and high in all other cases.
         out_valid:  out std_logic;
 
         -- Random output data (valid when out_valid = '1').
@@ -106,6 +110,9 @@ architecture trivium_arch of rng_trivium is
 
 begin
 
+    -- Check that num_bits is a power of 2.
+    assert (64 / num_bits) * num_bits = 64;
+
     -- Drive output signal.
     out_valid   <= reg_valid;
     out_data    <= reg_output;
@@ -117,8 +124,8 @@ begin
         if rising_edge(clk) then
 
             -- Determine valid output state.
-            -- Delay by 4*288 clock cycles after re-seeding.
-            if reg_valid_wait = 4*288 then
+            -- Delay by 4*288/num_bits clock cycles after re-seeding.
+            if reg_valid_wait = 4*288/num_bits then
                 reg_valid   <= '1';
             end if;
 

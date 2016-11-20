@@ -16,6 +16,8 @@ tb_mt19937:	tb_mt19937.o rng_mt19937.o
 tb_mt19937.o:	tb_mt19937.vhdl rng_mt19937.o
 rng_mt19937.o:	../rtl/rng_mt19937.vhdl
 
+rng_trivium.o:	../rtl/rng_trivium.vhdl
+
 tb_%: tb_%.o
 	$(GHDL) $(GHDLFLAGS) -e $@
 
