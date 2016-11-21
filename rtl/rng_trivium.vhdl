@@ -68,10 +68,10 @@ entity rng_trivium is
         reseed:     in  std_logic;
 
         -- New key value (must be valid when reseed = '1').
-        in_key:     in  std_logic_vector(79 downto 0);
+        newkey:     in  std_logic_vector(79 downto 0);
 
         -- New initialization vector (must be valid when reseed = '1').
-        in_iv:      in  std_logic_vector(79 downto 0);
+        newiv:      in  std_logic_vector(79 downto 0);
 
         -- High when the user accepts the current random data word
         -- and requests new random data for the next clock cycle.
@@ -170,7 +170,7 @@ begin
                 reg_valid       <= '0';
                 reg_valid_wait  <= (others => '0');
                 reg_state       <=
-                    ones3 & zeros108 & zeros4 & in_iv & zeros13 & in_key;
+                    ones3 & zeros108 & zeros4 & newiv & zeros13 & newkey;
             end if;
 
             -- Synchronous reset.
