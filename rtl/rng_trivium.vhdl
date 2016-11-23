@@ -10,6 +10,7 @@
 --  See also:
 --  C. De Canniere, B. Preneel, "Trivium Specifications",
 --    http://www.ecrypt.eu.org/stream/p3ciphers/trivium/trivium_p3.pdf
+--
 --  The eSTREAM portfolio page for Trivium:
 --    http://www.ecrypt.eu.org/stream/e2-trivium.html
 --
@@ -92,15 +93,43 @@ end entity;
 
 architecture trivium_arch of rng_trivium is
 
-    -- Fixed bit strings to fill up initial state after reseeding.
-    constant zeros13:   std_logic_vector(12 downto 0)  := (others => '0');
-    constant zeros4:    std_logic_vector(3 downto 0)   := (others => '0');
-    constant zeros108:  std_logic_vector(107 downto 0) := (others => '0');
-    constant ones3:     std_logic_vector(2 downto 0)   := (others => '1');
+    -- Prepare initial state vector for given key and IV.
+    --
+    -- NOTE: Elements 0 .. 79 from the key vector are mapped to
+    --       to state elements s_80 .. s_1.
+    --       Elements 0 .. 79 from the IV vector are mapped
+    --       to state elements s_173 .. s_94.
+    --
+    --       This deviates from the original Trivium specification
+    --       but is in line with the phase-3, API-compliant implementation
+    --       of Trivium as published on the ECRYPT website.
+    --
+    function make_initial_state(nkey, niv: in std_logic_vector)
+        return std_logic_vector
+    is
+        variable s: std_logic_vector(287 downto 0);
+    begin
+        assert nkey'length = 80;
+        assert niv'length = 80;
+
+        s := (others => '0');
+
+        for k in 0 to 79 loop
+            s(79-k) := nkey(k);
+        end loop;
+
+        for k in 0 to 79 loop
+            s(93+79-k) := niv(k);
+        end loop;
+
+        s(288-1 downto 288-3) := "111";
+
+        return s;
+    end function;
 
     -- Internal state of RNG.
     signal reg_state:       std_logic_vector(287 downto 0) :=
-        ones3 & zeros108 & zeros4 & init_iv & zeros13 & init_key;
+        make_initial_state(init_key, init_iv);
 
     signal reg_valid_wait:  unsigned(10 downto 0) := (others => '0');
 
@@ -143,7 +172,12 @@ begin
                 t3 := reg_state(243-1 downto 243-num_bits) xor
                       reg_state(288-1 downto 288-num_bits);
 
-                reg_output <= t1 xor t2 xor t3;
+                -- Create output word such that index 0 of the output
+                -- contains the earliest-generated bit and index (num_bits-1)
+                -- of the output contains the last-generated bit.
+                for k in 0 to num_bits-1 loop
+                    reg_output(num_bits-1-k) <= t1(k) xor t2(k) xor t3(k);
+                end loop;
 
                 -- Update internal state.
                 t1 := t1 xor (reg_state(91-1 downto 91-num_bits) and
@@ -169,16 +203,14 @@ begin
             if reseed = '1' then
                 reg_valid       <= '0';
                 reg_valid_wait  <= (others => '0');
-                reg_state       <=
-                    ones3 & zeros108 & zeros4 & newiv & zeros13 & newkey;
+                reg_state       <= make_initial_state(newkey, newiv);
             end if;
 
             -- Synchronous reset.
             if rst = '1' then
                 reg_valid       <= '0';
                 reg_valid_wait  <= (others => '0');
-                reg_state       <=
-                    ones3 & zeros108 & zeros4 & init_iv & zeros13 & init_key;
+                reg_state       <= make_initial_state(init_key, init_iv);
                 reg_output      <= (others => '0');
             end if;
 
