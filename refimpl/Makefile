@@ -5,7 +5,7 @@
 #
 
 .PHONY: all
-all: ref_xoroshiro ref_mt19937
+all: ref_xoroshiro ref_mt19937 ref_trivium
 
 ref_xoroshiro: ref_xoroshiro.c
 	$(CC) -std=c11 -Wall -O2 -o $@ $<
@@ -13,7 +13,10 @@ ref_xoroshiro: ref_xoroshiro.c
 ref_mt19937: ref_mt19937.cpp
 	$(CXX) -std=c++11 -Wall -O2 -o $@ $<
 
+ref_trivium: ref_trivium.cpp
+	$(CXX) -std=c++11 -Wall -O2 -o $@ $<
+
 .PHONY: clean
 clean:
-	$(RM) ref_xoroshiro ref_mt19937
+	$(RM) ref_xoroshiro ref_mt19937 ref_trivium
 
