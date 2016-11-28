@@ -43,7 +43,7 @@ Seed length:        128 bits
 Period:             2**128 - 1
 
 FPGA resources:     general logic and 64-bit adder
-Sythesis results:   194 LUTs, 192 registers on Spartan-6
+Synthesis results:  194 LUTs, 192 registers on Spartan-6
 Timing results:     333 MHz on Spartan-6 LX45-3
 
 
@@ -80,7 +80,7 @@ Seed length:        32 bits
 Period:             2**19937 - 1
 
 FPGA resources:     RAM block, 32 bits x 1024 elements
-Sythesis results:   279 LUTs, 297 registers, 2x RAMB16 on Spartan-6
+Synthesis results:  279 LUTs, 297 registers, 2x RAMB16 on Spartan-6
 Timing results:     300 MHz on Spartan-6 LX45-3
 
 
@@ -115,8 +115,8 @@ Seed length:        80 bits key + 80 bits IV
 Period:             unknown, depends on seed
 
 FPGA resources:     only general logic (AND, XOR ports, registers)
-Sythesis results:   TBD LUTs, TBD registers on Spartan-6 (32 bits output)
-Timing results:     TBD MHz on Spartan-6 LX45-3 (32 bits output)
+Synthesis results:  202 LUTs, 332 registers on Spartan-6 (32 bits output)
+Timing results:     380 MHz on Spartan-6 LX45-3 (32 bits output)
 
 
   Code organization
