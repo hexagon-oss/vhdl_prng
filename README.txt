@@ -16,8 +16,9 @@ These PRNGs are a good alternative to linear feedback shift registers (LFSR).
 Although LFSRs are commonly used, their output exhibits strong correlations.
 Furthermore, correctly generating multi-bit random words with LFSRs is tricky.
 
-NOTE: None of the RNGs in this package are cryptographic random number
-      generators. These generators are not suitable for cryptography.
+NOTE: This library is not suitable for cryptographic applications
+      (such as generating passwords, encryption keys).
+      Most of the RNGs in this library are cryptographically weak.
 
 
   Xoroshiro128+ RNG
@@ -83,17 +84,54 @@ Sythesis results:   279 LUTs, 297 registers, 2x RAMB16 on Spartan-6
 Timing results:     300 MHz on Spartan-6 LX45-3
 
 
+  Trivium RNG
+  -----------
+
+Trivium is a stream cipher published in 2005 by Christophe De Canniere
+and Bart Preneel as part of the eSTREAM project. 
+
+See also C. De Canniere, B. Preneel, "Trivium Specifications",
+http://www.ecrypt.eu.org/stream/p3ciphers/trivium/trivium_p3.pdf
+
+See also the eSTREAM portfolio page for Trivium:
+http://www.ecrypt.eu.org/stream/e2-trivium.html
+
+This library uses the key stream of the Trivium cipher as a sequence
+of random bits. The VHDL implementation produces up to 64 new random bits
+on every (enabled) clock cycle. The number of bits per clock cycle is
+configurade as a synthesis parameter.
+
+This RNG passes all known statistical tests. However, little is known
+about its period. The period depends on the seed value, and is believed
+to be long (at least 2**80) for the vast majority of seed choices.
+
+After reset and after each reseeding, the RNG needs to process 1152 bits
+to initialize its state. This takes up to 1152 clock cycles, depending
+on the configured number of bits per cycle. The RNG can not provide random
+data during this time.
+
+Output word length: configurable from 1 to 64 bits (must be power-of-2)
+Seed length:        80 bits key + 80 bits IV
+Period:             unknown, depends on seed
+
+FPGA resources:     only general logic (AND, XOR ports, registers)
+Sythesis results:   TBD LUTs, TBD registers on Spartan-6 (32 bits output)
+Timing results:     TBD MHz on Spartan-6 LX45-3 (32 bits output)
+
+
   Code organization
   -----------------
 
  rtl/                           Synthesizable VHDL code
  rtl/rng_xoroshiro128plus.vhdl  Implementation of Xoroshiro128+ RNG
  rtl/rng_mt19937.vhdl           Implementation of Mersenne Twister RNG
+ rtl/rng_trivium.vhdl           Implementation of Trivium RNG
 
  sim/                           Test benches
  sim/Makefile                   Makefile for building test benches with GHDL
  sim/tb_xoroshiro128plus.vhdl   Test bench for Xoroshiro128+ RNG
  sim/tb_mt19937.vhdl            Test bench for Mersenne Twister RNG
+ sim/tb_trivium.vhdl            Test bench for Trivium RNG
 
  refimpl/                       Reference software implementations of RNGs
 
