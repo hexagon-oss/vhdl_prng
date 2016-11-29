@@ -16,7 +16,7 @@ These PRNGs are a good alternative to linear feedback shift registers (LFSR).
 Although LFSRs are commonly used, their output exhibits strong correlations.
 Furthermore, correctly generating multi-bit random words with LFSRs is tricky.
 
-NOTE: This library is not suitable for cryptographic applications
+NOTE: This library is not designed for cryptographic applications
       (such as generating passwords, encryption keys).
       Most of the RNGs in this library are cryptographically weak.
 
@@ -105,7 +105,7 @@ This RNG passes all known statistical tests. However, little is known
 about its period. The period depends on the seed value, and is believed
 to be long (at least 2**80) for the vast majority of seed choices.
 
-After reset and after each reseeding, the RNG needs to process 1152 bits
+After reset and after each reseeding, the RNG must process 1152 bits
 to initialize its state. This takes up to 1152 clock cycles, depending
 on the configured number of bits per cycle. The RNG can not provide random
 data during this time.

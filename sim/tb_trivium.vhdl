@@ -28,6 +28,8 @@ architecture arch of tb_trivium is
 
     type test_vectors is array (natural range <>) of test_vector;
 
+    -- This is a small subset of the test vectors from
+    -- the ECRYPT stream cipher project.
     constant testvec: test_vectors(0 to 4) := (
         0 => ( key  => x"0053A6F94C9FF24598EB",
                iv   => x"0D74DB42A91077DE45AC",
