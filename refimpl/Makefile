@@ -4,17 +4,19 @@
 # This makefile works with GCC under Linux.
 #
 
+CC = gcc
+CXX = g++
+CFLAGS = -std=c11 -Wall -O2
+CXXFLAGS = -std=c++11 -Wall -O2
+
 .PHONY: all
 all: ref_xoroshiro ref_mt19937 ref_trivium
 
 ref_xoroshiro: ref_xoroshiro.c
-	$(CC) -std=c11 -Wall -O2 -o $@ $<
 
 ref_mt19937: ref_mt19937.cpp
-	$(CXX) -std=c++11 -Wall -O2 -o $@ $<
 
 ref_trivium: ref_trivium.cpp
-	$(CXX) -std=c++11 -Wall -O2 -o $@ $<
 
 .PHONY: clean
 clean:
