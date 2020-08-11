@@ -1,5 +1,5 @@
 --
---  Pseudo Random Number Generator "xoroshiro128+".
+--  Pseudo Random Number Generator "xoroshiro128+ 1.0".
 --
 --  Author: Joris van Rantwijk <joris@jorisvr.nl>
 --
@@ -7,9 +7,9 @@
 --  The generator can produce 64 new random bits on every clock cycle.
 --
 --  The algorithm "xoroshiro128+" is by David Blackman and Sebastiano Vigna.
---  See also http://xoroshiro.di.unimi.it/
+--  See also http://prng.di.unimi.it/
 --
---  The generator requires a 128-bit seed value, not equal to zero.
+--  The generator requires a 128-bit seed value, not equal to all zeros.
 --  A default seed must be supplied at compile time and will be used
 --  to initialize the generator at reset. The generator also supports
 --  re-seeding at run time.
@@ -19,12 +19,12 @@
 --
 --  NOTE: This is not a cryptographic random number generator.
 --
---  NOTE: The least significant output bit is less random than
---        all other output bits.
+--  NOTE: The least significant output bits are not fully random and
+--        fail certain statistical tests.
 --
 
 --
---  Copyright (C) 2016 Joris van Rantwijk
+--  Copyright (C) 2016-2020 Joris van Rantwijk
 --
 --  This code is free software; you can redistribute it and/or
 --  modify it under the terms of the GNU Lesser General Public
@@ -131,12 +131,12 @@ begin
                 -- Update internal state.
                 reg_state_s0    <= reg_state_s0 xor
                                    reg_state_s1 xor
-                                   shiftl(reg_state_s0, 14) xor
-                                   shiftl(reg_state_s1, 14) xor
-                                   rotl(reg_state_s0, 55);
+                                   rotl(reg_state_s0, 24) xor
+                                   shiftl(reg_state_s0, 16) xor
+                                   shiftl(reg_state_s1, 16);
 
-                reg_state_s1    <= rotl(reg_state_s0, 36) xor
-                                   rotl(reg_state_s1, 36);
+                reg_state_s1    <= rotl(reg_state_s0, 37) xor
+                                   rotl(reg_state_s1, 37);
 
             end if;
 

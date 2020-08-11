@@ -25,13 +25,17 @@ NOTE: This library is not designed for cryptographic applications
   ------------------
 
 Xoroshiro128+ is an RNG algorithm developed in 2016 by David Blackman
-and Sebastiano Vigna. It is a further development of the Xorshift algorithm
-invented by George Marsaglia
+and Sebastiano Vigna. The VHDL code matches an updated version of
+the algorithm called "xoroshiro128+ 1.0", released in 2018.
+The Xoroshiro algorithm is based on the Xorshift concept invented
+by George Marsaglia.
 
-See also http://xoroshiro.di.unimi.it/
+See also http://prng.di.unimi.it/
 
-This RNG passes many statistical tests. Its period, 2**128 - 1, is long
-compared to a typical LFSR, but much shorter than the Mersenne Twister.
+This RNG passes many statistical tests, but the least significant
+output bits are known to be not fully random and fail certain tests.
+The generator has a long period (2**128 - 1) compared to a typical LFSR,
+but much shorter than the Mersenne Twister.
 The output is 1-dimensionally equidistributed.
 
 The VHDL implementation produces 64 new random bits on every (enabled)
@@ -43,7 +47,7 @@ Seed length:        128 bits
 Period:             2**128 - 1
 
 FPGA resources:     general logic and 64-bit adder
-Synthesis results:  194 LUTs, 192 registers on Spartan-6
+Synthesis results:  198 LUTs, 193 registers on Spartan-6
 Timing results:     333 MHz on Spartan-6 LX45-3
 
 
@@ -141,7 +145,7 @@ Timing results:     380 MHz on Spartan-6 LX45-3 (32 bits output)
   License
   -------
 
-Copyright (C) 2016 Joris van Rantwijk
+Copyright (C) 2016-2020 Joris van Rantwijk
 
 This VHDL library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public License
