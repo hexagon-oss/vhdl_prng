@@ -120,7 +120,9 @@ Period:             unknown, depends on seed
 
 FPGA resources:     only general logic (AND, XOR ports, registers)
 Synthesis results:  202 LUTs, 332 registers on Spartan-6 (32 bits output)
+                    145 LUTs, 332 registers on Spartan-7 (32 bits output)
 Timing results:     380 MHz on Spartan-6 LX45-3 (32 bits output)
+                    440 MHz on Spartan-7 S25 (32 bits output)
 
 
   Code organization
