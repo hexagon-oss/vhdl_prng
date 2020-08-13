@@ -49,7 +49,7 @@ Timing results:     250 MHz on Spartan-6 LX45-3
 
 
   Xoroshiro128+ RNG
-  ------------------
+  -----------------
 
 Xoroshiro128+ is an RNG algorithm developed in 2016 by David Blackman
 and Sebastiano Vigna. The VHDL code matches an updated version of
@@ -155,20 +155,22 @@ Timing results:     380 MHz on Spartan-6 LX45-3 (32 bits output)
   Code organization
   -----------------
 
- rtl/                           Synthesizable VHDL code
- rtl/rng_xoroshiro128plus.vhdl  Implementation of Xoroshiro128+ RNG
- rtl/rng_mt19937.vhdl           Implementation of Mersenne Twister RNG
- rtl/rng_trivium.vhdl           Implementation of Trivium RNG
+ rtl/                             Synthesizable VHDL code
+ rtl/rng_xoshiro128plusplus.vhdl  Implementation of Xoshiro128++ RNG
+ rtl/rng_xoroshiro128plus.vhdl    Implementation of Xoroshiro128+ RNG
+ rtl/rng_mt19937.vhdl             Implementation of Mersenne Twister RNG
+ rtl/rng_trivium.vhdl             Implementation of Trivium RNG
 
- sim/                           Test benches
- sim/Makefile                   Makefile for building test benches with GHDL
- sim/tb_xoroshiro128plus.vhdl   Test bench for Xoroshiro128+ RNG
- sim/tb_mt19937.vhdl            Test bench for Mersenne Twister RNG
- sim/tb_trivium.vhdl            Test bench for Trivium RNG
+ sim/                             Test benches
+ sim/Makefile                     Makefile for building test benches with GHDL
+ sim/tb_xoshiro128plusplus.vhdl   Test bench for Xoshiro128++ RNG
+ sim/tb_xoroshiro128plus.vhdl     Test bench for Xoroshiro128+ RNG
+ sim/tb_mt19937.vhdl              Test bench for Mersenne Twister RNG
+ sim/tb_trivium.vhdl              Test bench for Trivium RNG
 
- refimpl/                       Reference software implementations of RNGs
+ refimpl/                         Reference software implementations of RNGs
 
- synth/                         Top-level wrappers for synthesis testruns
+ synth/                           Top-level wrappers for synthesis testruns
 
 
   License
