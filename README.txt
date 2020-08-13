@@ -21,6 +21,33 @@ NOTE: This library is not designed for cryptographic applications
       Most of the RNGs in this library are cryptographically weak.
 
 
+  Xoshiro128++ RNG
+  ----------------
+
+Xoshiro128++ is a random number generator developed in 2019 by
+David Blackman and Sebastiano Vigna. The Xoshiro construction is 
+based on the Xorshift concept invented by George Marsaglia.
+
+See also http://prng.di.unimi.it/
+
+This RNG produces a sequence of 32-bit words. It passes all known
+statistical tests and has a relatively long period (2**128 - 1).
+
+The VHDL implementation produces 32 new random bits on every (enabled)
+clock cycle. It is quite efficient in terms of FPGA resources, but it
+requires two cascaded 32-bit adders which limits its speed.
+
+Output word length: 32 bits
+Seed length:        128 bits
+Period:             2**128 - 1
+
+FPGA resources:     general logic and two 32-bit adders
+Synthesis results:  148 LUTs, 161 registers on Spartan-6
+                    148 LUTs, 161 registers on Spartan-7
+Timing results:     250 MHz on Spartan-6 LX45-3
+                    200 MHz on Spartan-7 S25-1
+
+
   Xoroshiro128+ RNG
   ------------------
 
@@ -122,7 +149,7 @@ FPGA resources:     only general logic (AND, XOR ports, registers)
 Synthesis results:  202 LUTs, 332 registers on Spartan-6 (32 bits output)
                     145 LUTs, 332 registers on Spartan-7 (32 bits output)
 Timing results:     380 MHz on Spartan-6 LX45-3 (32 bits output)
-                    440 MHz on Spartan-7 S25 (32 bits output)
+                    440 MHz on Spartan-7 S25-1 (32 bits output)
 
 
   Code organization
