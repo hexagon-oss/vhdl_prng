@@ -82,6 +82,12 @@ begin
         wait until falling_edge(clk);
         s_ready     <= '1';
 
+        -- Optionally wait an additional pipeline cycle.
+        if s_valid = '0' then
+            report "Detected pipeline delay";
+            wait until falling_edge(clk);
+        end if;
+
         -- Produce numbers
         for i in 0 to 999 loop
 
@@ -129,6 +135,12 @@ begin
         -- Wait 1 clock cycle to re-seed generator.
         wait until falling_edge(clk);
         s_ready     <= '1';
+
+        -- Optionally wait an additional pipeline cycle.
+        if s_valid = '0' then
+            report "Detected pipeline delay";
+            wait until falling_edge(clk);
+        end if;
 
         -- Produce numbers
         for i in 0 to 999 loop

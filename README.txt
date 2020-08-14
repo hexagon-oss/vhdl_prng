@@ -35,17 +35,19 @@ statistical tests and has a relatively long period (2**128 - 1).
 
 The VHDL implementation produces 32 new random bits on every (enabled)
 clock cycle. It is quite efficient in terms of FPGA resources, but it
-requires two cascaded 32-bit adders which limits its speed.
+requires two cascaded 32-bit adders which limit its speed. An optional
+pipeline stage can be inserted between the adders to improve the timing
+performance of the circuit.
 
 Output word length: 32 bits
 Seed length:        128 bits
 Period:             2**128 - 1
 
 FPGA resources:     general logic and two 32-bit adders
-Synthesis results:  148 LUTs, 161 registers on Spartan-6
-                    148 LUTs, 161 registers on Spartan-7
-Timing results:     250 MHz on Spartan-6 LX45-3
-                    200 MHz on Spartan-7 S25-1
+Synthesis results:  201 LUTs, 194 registers on Spartan-6
+                    149 LUTs, 194 registers on Spartan-7
+Timing results:     400 MHz on Spartan-6 LX45-3
+                    350 MHz on Spartan-7 S25-1
 
 
   Xoroshiro128+ RNG

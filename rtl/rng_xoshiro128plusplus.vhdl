@@ -14,8 +14,9 @@
 --  to initialize the generator at reset. The generator also supports
 --  re-seeding at run time.
 --
---  After reset and after re-seeding, at least one clock cycle is needed
---  before valid random data appears on the output.
+--  After reset and after re-seeding, one or two clock cycles are needed
+--  before valid random data appears on the output. The exact delay
+--  depends on the setting of the "pipeline" parameter.
 --
 --  NOTE: This is not a cryptographic random number generator.
 --
@@ -40,7 +41,15 @@ entity rng_xoshiro128plusplus is
 
     generic (
         -- Default seed value.
-        init_seed:  std_logic_vector(127 downto 0) );
+        init_seed:  std_logic_vector(127 downto 0);
+
+        -- Enable optional pipeline stage in output calculation.
+        -- This uses an extra 32-bit register but tends to improve
+        -- the timing performance of the circuit.
+        -- If the pipeline stage is enabled, two clock cycles are needed
+        -- before valid output appears after reset and after re-seeding.
+        -- If the pipeline stage is disabled, just one clock cycle is needed.
+        pipeline:   boolean := true );
 
     port (
 
@@ -61,7 +70,7 @@ entity rng_xoshiro128plusplus is
         out_ready:  in  std_logic;
 
         -- High when valid random data is available on the output.
-        -- This signal is low during the first clock cycle after reset and
+        -- This signal is low for 1 or 2 clock cycles after reset and
         -- after re-seeding, and high in all other cases.
         out_valid:  out std_logic;
 
@@ -81,8 +90,12 @@ architecture xoshiro128plusplus_arch of rng_xoshiro128plusplus is
     signal reg_state_s2:    std_logic_vector(31 downto 0) := init_seed(95 downto 64);
     signal reg_state_s3:    std_logic_vector(31 downto 0) := init_seed(127 downto 96);
 
+    -- Optional pipeline register.
+    signal reg_sum_s0s3:    std_logic_vector(31 downto 0) := (others => '0');
+
     -- Output register.
     signal reg_valid:       std_logic := '0';
+    signal reg_nvalid:      std_logic := '0';
     signal reg_output:      std_logic_vector(31 downto 0) := (others => '0');
 
 begin
@@ -93,17 +106,50 @@ begin
 
     -- Synchronous process.
     process (clk) is
+        variable v_prev_s0: std_logic_vector(31 downto 0) := (others => '0');
     begin
         if rising_edge(clk) then
 
             if out_ready = '1' or reg_valid = '0' then
 
                 -- Prepare output word.
-                reg_valid       <= '1';
-                reg_output      <= std_logic_vector(
-                                       rotate_left(unsigned(reg_state_s0) +
-                                                   unsigned(reg_state_s3), 7) +
-                                       unsigned(reg_state_s0));
+                if pipeline then
+
+                    -- Use a pipelined output stage.
+                    reg_valid       <= reg_nvalid;
+                    reg_nvalid      <= '1';
+
+                    -- Calculate the previous value of s0.
+                    v_prev_s0       := reg_state_s0 xor
+                                       std_logic_vector(
+                                           rotate_right(unsigned(reg_state_s3),
+                                                        11));
+
+                    -- Derive output from prev_s0 and intermediate result
+                    -- (prev_s0 + prev_s3) calculated in the previous cycle.
+                    reg_output      <= std_logic_vector(
+                                           unsigned(v_prev_s0) +
+                                           rotate_left(unsigned(reg_sum_s0s3),
+                                                       7));
+
+                    -- Update the intermediate register (s0 + s3).
+                    reg_sum_s0s3    <= std_logic_vector(
+                                           unsigned(reg_state_s0) +
+                                           unsigned(reg_state_s3));
+
+                else
+
+                    -- Derive output directly from s0 and s3.
+                    -- This requires two cascaded 32-bit adders and
+                    -- may limit the timing performance of the circuit.
+                    reg_valid       <= '1';
+                    reg_output      <= std_logic_vector(
+                                           rotate_left(
+                                               unsigned(reg_state_s0) +
+                                               unsigned(reg_state_s3), 7) +
+                                           unsigned(reg_state_s0));
+
+                end if;
 
                 -- Update internal state.
                 reg_state_s0    <= reg_state_s0 xor
@@ -120,7 +166,9 @@ begin
                                        shift_left(unsigned(reg_state_s1), 9));
 
                 reg_state_s3    <= std_logic_vector(
-                    rotate_left(unsigned(reg_state_s1 xor reg_state_s3), 11));
+                                       rotate_left(
+                                           unsigned(reg_state_s1 xor
+                                                    reg_state_s3), 11));
 
             end if;
 
@@ -131,6 +179,7 @@ begin
                 reg_state_s2    <= newseed(95 downto 64);
                 reg_state_s3    <= newseed(127 downto 96);
                 reg_valid       <= '0';
+                reg_nvalid      <= '0';
             end if;
 
             -- Synchronous reset.
@@ -140,6 +189,7 @@ begin
                 reg_state_s2    <= init_seed(95 downto 64);
                 reg_state_s3    <= init_seed(127 downto 96);
                 reg_valid       <= '0';
+                reg_nvalid      <= '0';
                 reg_output      <= (others => '0');
             end if;
 
